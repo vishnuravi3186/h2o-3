@@ -1,7 +1,6 @@
 package water.rapids.ast.prims.reducers;
 
 import water.MRTask;
-import water.fvec.C8Chunk;
 import water.fvec.Chunk;
 import water.fvec.Frame;
 import water.fvec.Vec;
@@ -17,7 +16,7 @@ import static java.lang.StrictMath.min;
 public class AstTopN extends AstPrimitive {
 		@Override
 		public String[] args() {
-				return new String[]{"frame", "col", "nPercent", "getBottomN"};
+				return new String[]{"frame", "col", "nPercent", "grabTopN"};
 		}
 
 		@Override
@@ -39,7 +38,7 @@ public class AstTopN extends AstPrimitive {
 		public String description() {
 				return "Return the top N percent rows for a numerical column as a frame with two columns.  The first column " +
 												"will contain the original row indices of the chosen values.  The second column contains the top N row" +
-												"values.  If getBottomN is 1, we will return the bottom N percent.  If getBottomN is -1, we will return" +
+												"values.  If grabTopN is -1, we will return the bottom N percent.  If grabTopN is 1, we will return" +
 												"the top N percent of rows";
 		}
 
@@ -48,11 +47,11 @@ public class AstTopN extends AstPrimitive {
 				Frame frOriginal = stk.track(asts[1].exec(env)).getFrame(); // get the 2nd argument and convert it to a Frame
 				int colIndex = (int) stk.track(asts[2].exec(env)).getNum();     // column index of interest
 				double nPercent = stk.track(asts[3].exec(env)).getNum();        //  top or bottom percentage of row to return
-				int getBottomN = (int) stk.track(asts[4].exec(env)).getNum();   // 0, return top, 1 return bottom percentage
+				int grabTopN = (int) stk.track(asts[4].exec(env)).getNum();   // 0, return top, 1 return bottom percentage
 				long numRows = Math.round(nPercent * 0.01 * frOriginal.numRows()); // number of rows to return
 
 				String[] finalColumnNames = {"Original_Row_Indices", frOriginal.name(colIndex)}; // set output frame names
-				GrabTopNPQ grabTask = new GrabTopNPQ(finalColumnNames, numRows, getBottomN);
+				GrabTopNPQ grabTask = new GrabTopNPQ(finalColumnNames, numRows, grabTopN, frOriginal.vec(colIndex).isInt());
 				grabTask.doAll(frOriginal.vec(colIndex));
 				return new ValFrame(grabTask._sortedOut);
 		}
@@ -68,16 +67,16 @@ public class AstTopN extends AstPrimitive {
 				final int _flipSign;   // 1 for top values, -1 for bottom values
 				boolean _csLong = false;      // chunk of interest is long
 
-				private GrabTopNPQ(String[] columnName, long rowSize, int flipSign) {
+				private GrabTopNPQ(String[] columnName, long rowSize, int flipSign, boolean isLong) {
 						_columnName = columnName;
 						_rowSize = (int) rowSize;
 						_flipSign = flipSign;
+						_csLong = isLong;
 				}
 
 				@Override
 				public void map(Chunk cs) {
 						_sortQueue = new PriorityQueue<RowValue<E>>(); // instantiate a priority queue
-						_csLong = cs instanceof C8Chunk;
 						long startRow = cs.start();           // absolute row offset
 
 						for (int rowIndex = 0; rowIndex < cs._len; rowIndex++) {  // stuff our chunks into priorityQueue
@@ -140,7 +139,7 @@ public class AstTopN extends AstPrimitive {
 						int otherRowIndex = 0;
 						for (int index = 0; index < finalArraySize; index++) {
 								if ((thisRowIndex < this._lValues.length) && (otherRowIndex < otherValue.length)) {
-										if ((this._lValues[thisRowIndex] - otherValue[otherRowIndex]) * this._flipSign >= 0) {
+										if ((((Long)this._lValues[thisRowIndex]).compareTo(otherValue[otherRowIndex]) * this._flipSign >= 0)) {
 												newRow[index] = this._rowIndices[thisRowIndex];
 												newValues[index] = this._lValues[thisRowIndex++];
 										} else {
@@ -161,7 +160,6 @@ public class AstTopN extends AstPrimitive {
 						this._lValues = newValues;
 				}
 
-
 				public void mergeArraysD(long[] otherRow, double[] otherValue) {
 						// grab bottom and grab top are slightly different
 						int finalArraySize = min(this._rowSize, this._rowIndices.length + otherRow.length);
@@ -172,7 +170,7 @@ public class AstTopN extends AstPrimitive {
 						int otherRowIndex = 0;
 						for (int index = 0; index < finalArraySize; index++) {
 								if ((thisRowIndex < this._dValues.length) && (otherRowIndex < otherValue.length)) {
-										if ((this._dValues[thisRowIndex] - otherValue[otherRowIndex]) * this._flipSign >= 0) {
+										if (((Double)this._dValues[thisRowIndex]).compareTo(otherValue[otherRowIndex]) * this._flipSign >= 0) {
 												newRow[index] = this._rowIndices[thisRowIndex];
 												newValues[index] = this._dValues[thisRowIndex++];
 										} else {

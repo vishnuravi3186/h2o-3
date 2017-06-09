@@ -68,19 +68,19 @@ public class AstTopNTest extends TestUtil {
 								Log.info("Percentage is " + testPercent);
 								if (testNo == 0) {
 										Log.info("Testing top N long.");
-										testTopBottom(topLong, testPercent, -1, "0", _tolerance);
+										testTopBottom(topLong, testPercent, 1, "0", _tolerance);
 								}
 								if (testNo == 1) {
 										Log.info("Testing top N float.");
-										testTopBottom(topFloat, testPercent, -1, "1", _tolerance);  // test top % Float
+										testTopBottom(topFloat, testPercent, 1, "1", _tolerance);  // test top % Float
 								}
 								if (testNo == 2) {
 										Log.info("Testing bottom N long.");
-										testTopBottom(bottomLong, testPercent, 1, "0", _tolerance);  // test bottom % Long
+										testTopBottom(bottomLong, testPercent, -1, "0", _tolerance);  // test bottom % Long
 								}
 								if (testNo == 3) {
 										Log.info("Testing bottom N float.");
-										testTopBottom(bottomFloat, testPercent, 1, "1", _tolerance);  // test bottom % Float
+										testTopBottom(bottomFloat, testPercent, -1, "1", _tolerance);  // test bottom % Float
 								}
 						}
 				} finally {
@@ -88,13 +88,13 @@ public class AstTopNTest extends TestUtil {
 				}
 		}
 
-		public void testTopBottom(Frame topBottom, double testPercent, int getBottom, String columnIndex,
+		public void testTopBottom(Frame topBottom, double testPercent, int grabTopN, String columnIndex,
 																												double tolerance) {
 				Scope.enter();
 				Frame topBN = null, topBL = null;
 				try {
 						long runTime = System.currentTimeMillis();
-						String x = "(topn " + _train._key + " " + columnIndex + " " + testPercent + " " + getBottom + ")";
+						String x = "(topn " + _train._key + " " + columnIndex + " " + testPercent + " " + grabTopN + ")";
 						Val res = Rapids.exec(x);         // make the call to grab top/bottom N percent
 						topBN = res.getFrame();            // get frame that contains top N elements
 						runTime = System.currentTimeMillis() - runTime;
@@ -102,7 +102,7 @@ public class AstTopNTest extends TestUtil {
 						Scope.track(topBN);
 						topBL = topBN.extractFrame(1, 2);
 						Scope.track(topBL);
-						checkTopBottomN(topBottom, topBL, tolerance, getBottom);
+						checkTopBottomN(topBottom, topBL, tolerance, grabTopN);
 				} finally {
 						Scope.exit();
 				}
@@ -111,16 +111,16 @@ public class AstTopNTest extends TestUtil {
 		/*
 		Helper function to compare test frame result with correct answer
 			*/
-		public void checkTopBottomN(Frame answerF, Frame grabF, double tolerance, int getBottom) {
+		public void checkTopBottomN(Frame answerF, Frame grabF, double tolerance, int grabTopN) {
 				Scope.enter();
 				try {
-						double nfrac = (getBottom > 0) ? 1.0 * grabF.numRows() / answerF.numRows() : (1 - 1.0 * grabF.numRows() / answerF.numRows());   // translate percentage to actual fraction
+						double nfrac = (grabTopN < 0) ? 1.0 * grabF.numRows() / answerF.numRows() : (1 - 1.0 * grabF.numRows() / answerF.numRows());   // translate percentage to actual fraction
 
 						SplitFrame sf = new SplitFrame(answerF, new double[]{nfrac, 1 - nfrac}, new Key[]{Key.make("topN.hex"), Key.make("bottomN.hex")});
 						// Invoke the job
 						sf.exec().get();
 						Key[] ksplits = sf._destination_frames;
-						Frame topN = (Frame) ((getBottom > 0) ? DKV.get(ksplits[0]).get() : DKV.get(ksplits[1]).get());
+						Frame topN = (Frame) ((grabTopN < 0) ? DKV.get(ksplits[0]).get() : DKV.get(ksplits[1]).get());
 						double[] bottomN = FrameUtils.asDoubles(grabF.vec(0));
 						Arrays.sort(bottomN);
 						Frame sortedF = new water.util.ArrayUtils().frame(bottomN);
