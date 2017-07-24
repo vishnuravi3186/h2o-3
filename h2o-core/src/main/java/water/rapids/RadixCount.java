@@ -21,8 +21,9 @@ class RadixCount extends MRTask<RadixCount> {
   private final boolean _isLeft; 
   private final int _id_maps[][];
   private final boolean _isNotDouble;
+  private final boolean _isNumeric;
 
-  RadixCount(boolean isLeft, long base, int shift, int col, int id_maps[][], boolean isNotDouble, BigInteger baseD) {
+  RadixCount(boolean isLeft, long base, int shift, int col, int id_maps[][], boolean isNotDouble, BigInteger baseD, boolean isNumeric) {
     _isLeft = isLeft;
     _base = base;
     _col = col;
@@ -30,6 +31,7 @@ class RadixCount extends MRTask<RadixCount> {
     _id_maps = id_maps;
     _isNotDouble = isNotDouble;
     _baseD = baseD;
+    _isNumeric = isNumeric;
   }
 
   // make a unique deterministic key as a function of frame, column and node
@@ -48,30 +50,22 @@ class RadixCount extends MRTask<RadixCount> {
     long tmp[] = _counts._val[chk.cidx()] = new long[256];
     // TODO: assert chk instanceof integer or enum; -- but how since many
     // integers (C1,C2 etc)?  Alternatively: chk.getClass().equals(C8Chunk.class)
-    if (!(_isLeft && chk.vec().isCategorical())) {
-      if (chk.vec().naCnt() == 0) {
+    if (!(_isLeft && chk.vec().isCategorical())) {  // for numeric columns
+      if (chk.vec().naCnt() == 0) { // no NAs in column
         // There are no NA in this join column; hence branch-free loop. Most
         // common case as should never really have NA in join columns.
-        for (int r=0; r<chk._len; r++) {
-          if (_isNotDouble) {
-            tmp[(int)((chk.at8(r)-_base+1) >> _shift)]++;
-          } else {
-            long ctrVal = MathUtils.convertDouble2BigInteger(chk.atd(r)).subtract(_baseD).add(BigInteger.ONE).shiftRight(_shift).longValue();
-            tmp[(int) ctrVal]++;
-          }
+        for (int r = 0; r < chk._len; r++) {
+          long ctrVal = MathUtils.convertDouble2BigInteger(chk.atd(r)).subtract(_baseD).add(BigInteger.ONE).shiftRight(_shift).longValue();
+          tmp[(int) ctrVal]++;
         }
-      } else {
+      } else {    // contains NAs in column
         // There are some NA in the column so have to branch.  TODO: warn user
         // NA are present in join column
         for (int r=0; r<chk._len; r++) {
           if (chk.isNA(r)) tmp[0]++;
           else {
-            if (_isNotDouble) {
-              tmp[(int)((chk.at8(r)-_base+1) >> _shift)]++;
-            } else {
-              long ctrVal = MathUtils.convertDouble2BigInteger(chk.atd(r)).subtract(_baseD).add(BigInteger.ONE).shiftRight(_shift).longValue();
-              tmp[(int) ctrVal]++;
-            }
+            long ctrVal = MathUtils.convertDouble2BigInteger(chk.atd(r)).subtract(_baseD).add(BigInteger.ONE).shiftRight(_shift).longValue();
+            tmp[(int) ctrVal]++;
           }
 
           // Done - we will join NA to NA as data.table does

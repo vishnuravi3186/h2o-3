@@ -25,6 +25,7 @@ class RadixOrder extends H2O.H2OCountedCompleter<RadixOrder> {
   final boolean _isNotDouble[];   // record if a column is numeric
   final BigInteger _maxD[];           // store the current double column maximum
   final boolean _isCategorical[];
+  final boolean _isNumeric[];   // record is a column is numeric (int or double)
 
   RadixOrder(Frame DF, boolean isLeft, int whichCols[], int id_maps[][]) {
     _DF = DF;
@@ -38,6 +39,7 @@ class RadixOrder extends H2O.H2OCountedCompleter<RadixOrder> {
     _baseD = new BigInteger[_whichCols.length];
     _maxD = new BigInteger[_whichCols.length];
     _isCategorical = new boolean[_whichCols.length];
+    _isNumeric = new boolean[_whichCols.length];
   }
 
   @Override
@@ -120,6 +122,7 @@ class RadixOrder extends H2O.H2OCountedCompleter<RadixOrder> {
       long max;
       if (col.isCategorical()) {
         _isCategorical[i] = true;
+        _isNumeric[i] = false;
         // simpler and more robust for now for all categorical bases to be 0,
         // even though some subsets may be far above 0; i.e. forgo uncommon
         // efficiency savings for now
@@ -144,10 +147,13 @@ class RadixOrder extends H2O.H2OCountedCompleter<RadixOrder> {
         }
       } else {
         _isCategorical[i] = false;
+        _isNumeric[i] = true;
         if (col.isInt()) {  // deal with integer columns
           _isNotDouble[i] = true;
           _base[i] = (long)col.min();
           max = (long)col.max();
+          _baseD[i] = BigInteger.valueOf((long)col.min());
+          _maxD[i] = BigInteger.valueOf((long)col.max());
         } else {  // deal with double columns
           _isNotDouble[i] = false;    // column is double, use long representation of doubles
           _baseD[i] = MathUtils.convertDouble2BigInteger(col.min());
@@ -181,13 +187,13 @@ class RadixOrder extends H2O.H2OCountedCompleter<RadixOrder> {
   private long computeShift( final long max, final int i )  {
     long range;
     int biggestBit = 0;
-    if (_isNotDouble[i] || _isCategorical[i]) {
+    if (_isNumeric[i]) {
+      int rangeD = _maxD[i].subtract(_baseD[i]).add(BigInteger.ONE).add(BigInteger.ONE).bitLength();
+      biggestBit = rangeD==64?64:rangeD+1;
+    } else {
       range = max - _base[i] + 2; // +1 for when min==max to include the bound, +1 for the leading NA spot
       // number of bits starting from 1 easier to think about (for me)
       biggestBit = 1 + (int) Math.floor(Math.log(range) / Math.log(2));
-    } else {
-      int rangeD = _maxD[i].subtract(_baseD[i]).add(BigInteger.ONE).add(BigInteger.ONE).bitLength();
-      biggestBit = rangeD==64?64:rangeD+1;
     }
 
     // TODO: feed back to R warnings()
@@ -195,7 +201,14 @@ class RadixOrder extends H2O.H2OCountedCompleter<RadixOrder> {
     assert biggestBit >= 1;
     _shift[i] = Math.max(8, biggestBit)-8;
     long MSBwidth = 1L << _shift[i];
-    if (_isNotDouble[i] || _isCategorical[i]) {
+    if (_isNumeric[i]) {
+      BigInteger msbWidth = BigInteger.valueOf(MSBwidth);
+      if (_baseD[i].mod(msbWidth).compareTo(BigInteger.ZERO) != 0) {
+        _baseD[i] = msbWidth.multiply (_baseD[i].divide(msbWidth)); // dealing with unsigned integer here
+        assert _baseD[i].mod(msbWidth).compareTo(BigInteger.ZERO)==0;
+      }
+      return _maxD[i].subtract(_baseD[i]).add(BigInteger.ONE).shiftRight(_shift[i]).intValue();
+    } else {
       if (_base[i] % MSBwidth != 0) {
         // choose base lower than minimum so as to align boundaries (unless
         // minimum already on a boundary by chance)
@@ -203,13 +216,6 @@ class RadixOrder extends H2O.H2OCountedCompleter<RadixOrder> {
         assert _base[i] % MSBwidth == 0;
       }
       return (max - _base[i] + 1L) >> _shift[i];  // relied on in RadixCount.map
-    } else {
-      BigInteger msbWidth = BigInteger.valueOf(MSBwidth);
-      if (_baseD[i].mod(msbWidth).compareTo(BigInteger.ZERO) != 0) {
-        _baseD[i] = msbWidth.multiply (_baseD[i].divide(msbWidth)); // dealing with unsigned integer here
-        assert _baseD[i].mod(msbWidth).compareTo(BigInteger.ZERO)==0;
-      }
-      return _maxD[i].subtract(_baseD[i]).add(BigInteger.ONE).shiftRight(_shift[i]).intValue();
     }
   }
 

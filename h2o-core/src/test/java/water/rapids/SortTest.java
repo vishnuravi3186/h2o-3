@@ -6,6 +6,7 @@ import water.*;
 import water.fvec.*;
 import water.nbhm.NonBlockingHashMapLong;
 import water.rapids.vals.ValFrame;
+import water.util.ArrayUtils;
 
 import java.io.IOException;
 import java.util.Random;
@@ -180,6 +181,23 @@ public class SortTest extends TestUtil {
       Scope.exit();
     }
   }
+
+  @Test public void TestSortOverflows() throws IOException {
+    Scope.enter();
+    Frame fr=null, sorted=null;
+    try {
+      fr = ArrayUtils.frame(ar("Long", "Double"), ard(Long.MAX_VALUE, Double.MAX_VALUE), ard(0, 0),
+              ard(Long.MIN_VALUE, Double.MIN_VALUE), ard(-10, -18.3), ard(10, 10.8),
+              ard(Long.MAX_VALUE, Double.MAX_VALUE), ard(Long.MIN_VALUE, Double.MIN_VALUE));
+      sorted = fr.sort(new int[]{0}); // sort Long/integer first
+      Scope.track(fr);
+      Scope.track(sorted);
+      testSort(sorted, fr,0);
+    } finally {
+      Scope.exit();
+    }
+  }
+
 
   @Test public void TestSortIntegersFloats() throws IOException {
     // test small integers sort

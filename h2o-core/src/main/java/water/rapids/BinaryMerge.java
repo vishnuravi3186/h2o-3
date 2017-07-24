@@ -53,8 +53,9 @@ class BinaryMerge extends DTask<BinaryMerge> {
     private final BigInteger _baseD[];  // the col.min() of each column in double
     private final boolean _isNotDouble[]; // denote if a column is integer or double
     private final boolean _isCategorical[];
+    private final boolean _isNumeric[];
 
-    FFSB( Frame frame, int msb, int shift, int fieldSizes[], long base[], BigInteger baseD[], boolean isNotDouble[], boolean isCategorical[]) {
+    FFSB( Frame frame, int msb, int shift, int fieldSizes[], long base[], BigInteger baseD[], boolean isNotDouble[], boolean isCategorical[], boolean isNumeric[]) {
       assert -1<=msb && msb<=255; // left ranges from 0 to 255, right from -1 to 255
       _frame = frame;
       _msb = msb;
@@ -65,6 +66,7 @@ class BinaryMerge extends DTask<BinaryMerge> {
       _baseD = baseD;
       _isNotDouble = isNotDouble;
       _isCategorical = isCategorical;
+      _isNumeric = isNumeric;
       // Create fast lookups to go from chunk index to node index of that chunk
       Vec vec = _vec = frame.anyVec();
       _chunkNode = vec==null ? null : new int[vec.nChunks()];
@@ -77,10 +79,10 @@ class BinaryMerge extends DTask<BinaryMerge> {
  //   long max() { return (((long)_msb+1) << _shift) + _base[0]-2; } // the last  key possible in this bucket
 
     long min() {
-      return (_isNotDouble[0]||_isCategorical[0])?(((long)_msb) << _shift) + _base[0]-1:BigInteger.valueOf(((long)_msb) << _shift).add(_baseD[0].subtract(BigInteger.ONE)).longValue();
+      return _isNumeric[0]?BigInteger.valueOf(((long)_msb) << _shift).add(_baseD[0].subtract(BigInteger.ONE)).longValue():(((long)_msb) << _shift) + _base[0]-1;
     }
     long max() {
-      return (_isNotDouble[0]||_isCategorical[0])?(((long)_msb+1) << _shift) + _base[0]-1:BigInteger.valueOf(((long)_msb+1) << _shift).add(_baseD[0].subtract(BigInteger.ONE).subtract(BigInteger.ONE)).longValue();
+      return _isNumeric[0]?BigInteger.valueOf(((long)_msb+1) << _shift).add(_baseD[0].subtract(BigInteger.ONE).subtract(BigInteger.ONE)).longValue():(((long)_msb+1) << _shift) + _base[0]-1;
     }
   }
 

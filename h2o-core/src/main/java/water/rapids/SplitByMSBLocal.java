@@ -17,6 +17,7 @@ class SplitByMSBLocal extends MRTask<SplitByMSBLocal> {
   private final long _base[];
   private final BigInteger _baseD[];
   private final boolean _isNotDouble[];
+  private final boolean _isNumeric[];
   private final int  _col[];
   private final Key _linkTwoMRTask;
   private final int _id_maps[][];
@@ -27,13 +28,13 @@ class SplitByMSBLocal extends MRTask<SplitByMSBLocal> {
   private long _numRowsOnThisNode;
 
   static Hashtable<Key,SplitByMSBLocal> MOVESHASH = new Hashtable<>();
-  SplitByMSBLocal(boolean isLeft, long base[], int shift, int keySize, int batchSize, int bytesUsed[], int[] col, Key linkTwoMRTask, int[][] id_maps, boolean[] isNotDouble, BigInteger[] baseD) {
+  SplitByMSBLocal(boolean isLeft, long base[], int shift, int keySize, int batchSize, int bytesUsed[], int[] col, Key linkTwoMRTask, int[][] id_maps, boolean[] isNotDouble, BigInteger[] baseD, boolean[] isNumeric) {
     _isLeft = isLeft;
     // we only currently use the shift (in bits) for the first column for the
     // MSB (which we don't know from bytesUsed[0]). Otherwise we use the
     // bytesUsed to write the key's bytes.
     _shift = shift;
-    _batchSize=batchSize; _bytesUsed=bytesUsed; _col=col; _base=base; _isNotDouble=isNotDouble;
+    _batchSize=batchSize; _bytesUsed=bytesUsed; _col=col; _base=base; _isNotDouble=isNotDouble; _isNumeric=isNumeric;
     _baseD=baseD;
     _keySize = keySize;
     _linkTwoMRTask = linkTwoMRTask;
@@ -134,19 +135,14 @@ class SplitByMSBLocal extends MRTask<SplitByMSBLocal> {
         thisx = chk[0].at8(r);
         // TODO: restore branch-free again, go by column and retain original
         // compression with no .at8()
-        if (_isLeft && _id_maps[0]!=null) {
+        if (_isLeft && _id_maps[0]!=null) { // dealing with enum columns
           thisx = _id_maps[0][(int) thisx] + 1;
           MSBvalue = (int)(thisx >> _shift);
           // may not be worth that as has to be global minimum so will rarely be
           // able to use as raw, but when we can maybe can do in bulk
-        } else {
-          if (_isNotDouble[0]) {
-            thisx = chk[0].at8(r) - _base[0] + 1;
-            MSBvalue = (int)(thisx >> _shift);
-          } else {
-            thisxD = MathUtils.convertDouble2BigInteger(chk[0].atd(r)).subtract(_baseD[0]).add(BigInteger.ONE);
-            MSBvalue = thisxD.shiftRight(_shift).intValue();
-          }
+        } else {    // dealing with numeric columns (int or double)
+          thisxD = MathUtils.convertDouble2BigInteger(chk[0].atd(r)).subtract(_baseD[0]).add(BigInteger.ONE);
+          MSBvalue = thisxD.shiftRight(_shift).intValue();
         }
       }
 
@@ -159,18 +155,18 @@ class SplitByMSBLocal extends MRTask<SplitByMSBLocal> {
       byte this_x[] = _x[MSBvalue][batch];
       offset *= _keySize; // can't overflow because batchsize was chosen above to be maxByteSize/max(keysize,8)
 
-      if (_isNotDouble[0]) {
-        for (int i = _bytesUsed[0] - 1; i >= 0; i--) {   // a loop because I don't believe System.arraycopy() can copy parts of (byte[])long to byte[]
-          this_x[offset + i] = (byte) (thisx & 0xFFL);
-          thisx >>= 8;
-        }
-      } else {
+      if (_isNumeric[0]) {
         byte keyArray[]=thisxD.toByteArray();  // switched already here.
         int offIndex = keyArray.length>8?-1:_bytesUsed[0]-keyArray.length;
         int endLen = _bytesUsed[0]-(keyArray.length > 8?8:keyArray.length);
 
         for (int i = _bytesUsed[0]-1; i >= endLen; i--) {
           this_x[offset+i] = keyArray[i-offIndex];
+        }
+      } else {
+        for (int i = _bytesUsed[0] - 1; i >= 0; i--) {   // a loop because I don't believe System.arraycopy() can copy parts of (byte[])long to byte[]
+          this_x[offset + i] = (byte) (thisx & 0xFFL);
+          thisx >>= 8;
         }
       }
 
@@ -180,24 +176,24 @@ class SplitByMSBLocal extends MRTask<SplitByMSBLocal> {
         thisx = chk[c].at8(r);         // TODO : compress with a scale factor such as dates stored as ms since epoch / 3600000L
         if (_isLeft && _id_maps[c] != null) thisx = _id_maps[c][(int)thisx] + 1;
         else {
-          if (_isNotDouble[c]) {
-            thisx = thisx - _base[c] + 1;
-          } else {
+          if (_isNumeric[c]) {
             thisxD = MathUtils.convertDouble2BigInteger(chk[c].atd(r)).subtract(_baseD[c]).add(BigInteger.ONE);
+          } else {
+            thisx = thisx - _base[c] + 1;
           }
         }
 
-        if (_isNotDouble[c]) {
-          for (int i = _bytesUsed[c] - 1; i >= 0; i--) {
-            this_x[offset + i] = (byte) (thisx & 0xFFL);
-            thisx >>= 8;
-          }
-        } else {
+        if (_isNumeric[c]) {
           byte keyArray[]=thisxD.toByteArray();  // switched already here.
           int offIndex = keyArray.length>8?-1:_bytesUsed[0]-keyArray.length;
           int endLen = _bytesUsed[c]-(keyArray.length > 8?8:keyArray.length);
           for (int i = _bytesUsed[c]-1; i>=endLen; i--)
             this_x[offset+i] = keyArray[i-offIndex];
+        } else {
+          for (int i = _bytesUsed[c] - 1; i >= 0; i--) {
+            this_x[offset + i] = (byte) (thisx & 0xFFL);
+            thisx >>= 8;
+          }
         }
       }
     }
