@@ -55,7 +55,12 @@ class RadixCount extends MRTask<RadixCount> {
         // There are no NA in this join column; hence branch-free loop. Most
         // common case as should never really have NA in join columns.
         for (int r = 0; r < chk._len; r++) {
-          long ctrVal = MathUtils.convertDouble2BigInteger(chk.atd(r)).subtract(_baseD).add(BigInteger.ONE).shiftRight(_shift).longValue();
+          long ctrVal = _isNotDouble ? BigInteger.valueOf(chk.at8(r)).subtract(_baseD).add(BigInteger.ONE).shiftRight(_shift).longValue()
+                  : MathUtils.convertDouble2BigInteger(chk.atd(r)).subtract(_baseD).add(BigInteger.ONE).shiftRight(_shift).longValue();
+          if (ctrVal < 0) {
+            System.out.println("Arghhh.");
+          }
+
           tmp[(int) ctrVal]++;
         }
       } else {    // contains NAs in column
@@ -64,7 +69,8 @@ class RadixCount extends MRTask<RadixCount> {
         for (int r=0; r<chk._len; r++) {
           if (chk.isNA(r)) tmp[0]++;
           else {
-            long ctrVal = MathUtils.convertDouble2BigInteger(chk.atd(r)).subtract(_baseD).add(BigInteger.ONE).shiftRight(_shift).longValue();
+            long ctrVal = _isNotDouble?BigInteger.valueOf(chk.at8(r)).subtract(_baseD).add(BigInteger.ONE).shiftRight(_shift).longValue():
+                    MathUtils.convertDouble2BigInteger(chk.atd(r)).subtract(_baseD).add(BigInteger.ONE).shiftRight(_shift).longValue();
             tmp[(int) ctrVal]++;
           }
 

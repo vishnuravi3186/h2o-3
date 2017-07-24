@@ -57,7 +57,7 @@ class RadixOrder extends H2O.H2OCountedCompleter<RadixOrder> {
     System.out.println("Time to use rollup stats to determine biggestBit: " + ((t1=System.nanoTime()) - t0) / 1e9); t0=t1;
 
     if( _whichCols.length > 0 )
-      new RadixCount(_isLeft, _base[0], _shift[0], _whichCols[0], _isLeft ? _id_maps : null, _isNotDouble[0],_baseD[0]).doAll(_DF.vec(_whichCols[0]));
+      new RadixCount(_isLeft, _base[0], _shift[0], _whichCols[0], _isLeft ? _id_maps : null, _isNotDouble[0],_baseD[0], _isNumeric[0]).doAll(_DF.vec(_whichCols[0]));
     System.out.println("Time of MSB count MRTask left local on each node (no reduce): " + ((t1=System.nanoTime()) - t0) / 1e9); t0=t1;
 
     // NOT TO DO:  we do need the full allocation of x[] and o[].  We need o[] anyway.  x[] will be compressed and dense.
@@ -71,7 +71,7 @@ class RadixOrder extends H2O.H2OCountedCompleter<RadixOrder> {
     // TODO: fix closeLocal() blocking issue and revert to simpler usage of closeLocal()
     Key linkTwoMRTask = Key.make();
     if( _whichCols.length > 0 )
-      new SplitByMSBLocal(_isLeft, _base, _shift[0], keySize, batchSize, _bytesUsed, _whichCols, linkTwoMRTask, _id_maps, _isNotDouble, _baseD).doAll(_DF.vecs(_whichCols)); // postLocal needs DKV.put()
+      new SplitByMSBLocal(_isLeft, _base, _shift[0], keySize, batchSize, _bytesUsed, _whichCols, linkTwoMRTask, _id_maps, _isNotDouble, _baseD, _isNumeric).doAll(_DF.vecs(_whichCols)); // postLocal needs DKV.put()
     System.out.println("SplitByMSBLocal MRTask (all local per node, no network) took : " + ((t1=System.nanoTime()) - t0) / 1e9); t0=t1;
 
     if( _whichCols.length > 0 )
@@ -188,8 +188,12 @@ class RadixOrder extends H2O.H2OCountedCompleter<RadixOrder> {
     long range;
     int biggestBit = 0;
     if (_isNumeric[i]) {
-      int rangeD = _maxD[i].subtract(_baseD[i]).add(BigInteger.ONE).add(BigInteger.ONE).bitLength();
-      biggestBit = rangeD==64?64:rangeD+1;
+      if (_isNotDouble[i]) {
+        biggestBit = _maxD[i].subtract(_baseD[i]).add(BigInteger.ONE).add(BigInteger.ONE).bitLength();
+      } else {
+        int rangeD = _maxD[i].subtract(_baseD[i]).add(BigInteger.ONE).add(BigInteger.ONE).bitLength();
+        biggestBit = rangeD==64?64:rangeD+1;
+      }
     } else {
       range = max - _base[i] + 2; // +1 for when min==max to include the bound, +1 for the leading NA spot
       // number of bits starting from 1 easier to think about (for me)
@@ -204,7 +208,8 @@ class RadixOrder extends H2O.H2OCountedCompleter<RadixOrder> {
     if (_isNumeric[i]) {
       BigInteger msbWidth = BigInteger.valueOf(MSBwidth);
       if (_baseD[i].mod(msbWidth).compareTo(BigInteger.ZERO) != 0) {
-        _baseD[i] = msbWidth.multiply (_baseD[i].divide(msbWidth)); // dealing with unsigned integer here
+        _baseD[i] = _isNotDouble[i]? msbWidth.multiply(_baseD[i].divide(msbWidth).add(_baseD[i].signum()<0?BigInteger.valueOf(-1L):BigInteger.ZERO))
+                :msbWidth.multiply (_baseD[i].divide(msbWidth)); // dealing with unsigned integer here
         assert _baseD[i].mod(msbWidth).compareTo(BigInteger.ZERO)==0;
       }
       return _maxD[i].subtract(_baseD[i]).add(BigInteger.ONE).shiftRight(_shift[i]).intValue();

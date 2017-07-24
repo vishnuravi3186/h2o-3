@@ -186,13 +186,14 @@ public class SortTest extends TestUtil {
     Scope.enter();
     Frame fr=null, sorted=null;
     try {
-      fr = ArrayUtils.frame(ar("Long", "Double"), ard(Long.MAX_VALUE, Double.MAX_VALUE), ard(0, 0),
-              ard(Long.MIN_VALUE, Double.MIN_VALUE), ard(-10, -18.3), ard(10, 10.8),
-              ard(Long.MAX_VALUE, Double.MAX_VALUE), ard(Long.MIN_VALUE, Double.MIN_VALUE));
-      sorted = fr.sort(new int[]{0}); // sort Long/integer first
+      fr = ArrayUtils.frame(ar("Long", "Double"), ard(Long.MAX_VALUE, Double.MAX_VALUE),
+              ard(Long.MIN_VALUE+10, Double.MIN_VALUE),
+              ard(Long.MAX_VALUE, Double.MAX_VALUE), ard(-1152921504, Double.MIN_VALUE));
+      int colIndex = 0;
+      sorted = fr.sort(new int[]{colIndex}); // sort Long/integer first
       Scope.track(fr);
       Scope.track(sorted);
-      testSort(sorted, fr,0);
+      testSort(sorted, fr,colIndex);
     } finally {
       Scope.exit();
     }

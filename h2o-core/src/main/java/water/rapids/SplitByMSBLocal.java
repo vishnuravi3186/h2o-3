@@ -141,7 +141,8 @@ class SplitByMSBLocal extends MRTask<SplitByMSBLocal> {
           // may not be worth that as has to be global minimum so will rarely be
           // able to use as raw, but when we can maybe can do in bulk
         } else {    // dealing with numeric columns (int or double)
-          thisxD = MathUtils.convertDouble2BigInteger(chk[0].atd(r)).subtract(_baseD[0]).add(BigInteger.ONE);
+          thisxD = _isNotDouble[0]? BigInteger.valueOf(chk[0].at8(r)).subtract(_baseD[0]).add(BigInteger.ONE)
+                  :MathUtils.convertDouble2BigInteger(chk[0].atd(r)).subtract(_baseD[0]).add(BigInteger.ONE);
           MSBvalue = thisxD.shiftRight(_shift).intValue();
         }
       }
@@ -177,7 +178,8 @@ class SplitByMSBLocal extends MRTask<SplitByMSBLocal> {
         if (_isLeft && _id_maps[c] != null) thisx = _id_maps[c][(int)thisx] + 1;
         else {
           if (_isNumeric[c]) {
-            thisxD = MathUtils.convertDouble2BigInteger(chk[c].atd(r)).subtract(_baseD[c]).add(BigInteger.ONE);
+            thisxD = _isNotDouble[c]?BigInteger.valueOf(chk[c].at8(r)).subtract(_baseD[c]).add(BigInteger.ONE)
+                    :MathUtils.convertDouble2BigInteger(chk[c].atd(r)).subtract(_baseD[c]).add(BigInteger.ONE);
           } else {
             thisx = thisx - _base[c] + 1;
           }
