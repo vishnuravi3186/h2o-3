@@ -11,46 +11,46 @@ test <-
     set.seed(12345)
     n = 100000
 
-    # true_prob_train = runif(n)
-    # true_prob_test = runif(n)
-    # 
-    # # More complex data, setting up myvar to break scoring
-    # df_train <- data.frame(response = rbinom(n, size = 1, true_prob_train),
-    # true_prob = true_prob_train,
-    # myvar =c(rep(-0.0935, n/2), rep(-0.094, n/2)),
-    # matrix(runif(n*100), n, 100),
-    # matrix(rnorm(n*100), n, 100))
-    # df_test <- data.frame(response = rbinom(n, size = 1, true_prob_test),
-    # true_prob = true_prob_test,
-    # myvar =c(rep(-0.09375, n)),
-    # matrix(runif(n*100), n, 100),
-    # matrix(rnorm(n*100), n, 100))
-    # 
-    # df_test_v2 <- data.frame(response = rbinom(n, size = 1, true_prob_test),
-    # true_prob = true_prob_test,
-    # myvar =c(rep(-0.09374999, n)),
-    # matrix(runif(n*100), n, 100),
-    # matrix(rnorm(n*100), n, 100))
-    # 
-    # 
-    # write.csv(df_train, "./df_train.csv", row.names = F)
-    # write.csv(df_test, "./df_test.csv", row.names = F)
-    # write.csv(df_test_v2, "./df_test_v2.csv", row.names = F)
+    true_prob_train = runif(n)
+    true_prob_test = runif(n)
 
-    #### Read data in H2O ####
-    # train.hex <- h2o.importFile(path = paste0(getwd(), "/df_train.csv"),
-    # destination_frame = "train.hex")
-    # test.hex <- h2o.importFile(path = paste0(getwd(), "/df_test.csv"),
-    # destination_frame = "test.hex")
-    # test_v2.hex <- h2o.importFile(path = paste0(getwd(), "/df_test_v2.csv"),
-    # destination_frame = "test.hex")
+    # More complex data, setting up myvar to break scoring
+    df_train <- data.frame(response = rbinom(n, size = 1, true_prob_train),
+    true_prob = true_prob_train,
+    myvar =c(rep(-0.0935, n/2), rep(-0.094, n/2)),
+    matrix(runif(n*100), n, 100),
+    matrix(rnorm(n*100), n, 100))
+    df_test <- data.frame(response = rbinom(n, size = 1, true_prob_test),
+    true_prob = true_prob_test,
+    myvar =c(rep(-0.09375, n)),
+    matrix(runif(n*100), n, 100),
+    matrix(rnorm(n*100), n, 100))
 
-    train.hex <- h2o.importFile(locate("bigdata/laptop/jira/df_train.csv.zip"),
+    df_test_v2 <- data.frame(response = rbinom(n, size = 1, true_prob_test),
+    true_prob = true_prob_test,
+    myvar =c(rep(-0.09374999, n)),
+    matrix(runif(n*100), n, 100),
+    matrix(rnorm(n*100), n, 100))
+
+
+    write.csv(df_train, "./df_train.csv", row.names = F)
+    write.csv(df_test, "./df_test.csv", row.names = F)
+    write.csv(df_test_v2, "./df_test_v2.csv", row.names = F)
+
+    ### Read data in H2O ####
+    train.hex <- h2o.importFile(path = paste0(getwd(), "/df_train.csv"),
     destination_frame = "train.hex")
-    test.hex <- h2o.importFile(locate("bigdata/laptop/jira/df_test.csv.zip"),
+    test.hex <- h2o.importFile(path = paste0(getwd(), "/df_test.csv"),
     destination_frame = "test.hex")
-    test_v2.hex <- h2o.importFile(locate("bigdata/laptop/jira/df_test_v2.csv.zip"),
-    destination_frame = "test_v2.hex")
+    test_v2.hex <- h2o.importFile(path = paste0(getwd(), "/df_test_v2.csv"),
+    destination_frame = "test.hex")
+
+    # train.hex <- h2o.importFile(locate("bigdata/laptop/jira/df_train.csv.zip"),
+    # destination_frame = "train.hex")
+    # test.hex <- h2o.importFile(locate("bigdata/laptop/jira/df_test.csv.zip"),
+    # destination_frame = "test.hex")
+    # test_v2.hex <- h2o.importFile(locate("bigdata/laptop/jira/df_test_v2.csv.zip"),
+    # destination_frame = "test_v2.hex")
 
     #### Train h2o model ####
     predictors <- setdiff(colnames(train.hex), "response")
@@ -91,6 +91,8 @@ test <-
     h2o.saveModel(model_pojo_experiment, getwd())
     h2o.download_pojo(model_pojo_experiment, get_jar = T, path = getwd())
 
+    browser()
+    
     #### Compare predictions for test data ####
     # Prediction from the model
     pred_test_fromModel <- h2o.predict(model_pojo_experiment, test.hex)
