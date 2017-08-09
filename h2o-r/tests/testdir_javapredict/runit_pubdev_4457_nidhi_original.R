@@ -108,19 +108,19 @@ test <-
     #-9.987e-02 -1.330e-02 -9.234e-05 -7.335e-05  1.307e-02  1.159e-01
 
     #### Version 2 does not have any differences ####
-    pred_test_v2_fromModel <- h2o.predict(model_pojo_experiment, test_v2.hex)
-    pred_test_v2_fromModel <- as.data.frame(pred_test_v2_fromModel)
-
-    system("java -ea -cp :h2o-genmodel.jar hex.genmodel.tools.PredictCsv --header --model pojo_mismatch_3_model_0 --input ./df_test_v2.csv --output ./pred_test_v2_viaPojo.csv --decimal")
-
-    pred_test_v2_viaPojo <- read.csv("pred_test_v2_viaPojo.csv")
-    head(pred_test_v2_viaPojo)
-
-    all(pred_test_v2_viaPojo$predict == pred_test_v2_fromModel$predict)
-    sum(pred_test_v2_viaPojo$predict == pred_test_v2_fromModel$predict) #100000
-    sum(pred_test_v2_viaPojo$predict != pred_test_v2_fromModel$predict) #0
-    # See no differences:
-    cbind(pred_test_v2_viaPojo$predict, pred_test_v2_fromModel$predict)[1:100,]
+    # pred_test_v2_fromModel <- h2o.predict(model_pojo_experiment, test_v2.hex)
+    # pred_test_v2_fromModel <- as.data.frame(pred_test_v2_fromModel)
+    # 
+    # system("java -ea -cp :h2o-genmodel.jar hex.genmodel.tools.PredictCsv --header --model pojo_mismatch_3_model_0 --input ./df_test_v2.csv --output ./pred_test_v2_viaPojo.csv --decimal")
+    # 
+    # pred_test_v2_viaPojo <- read.csv("pred_test_v2_viaPojo.csv")
+    # head(pred_test_v2_viaPojo)
+    # 
+    # all(pred_test_v2_viaPojo$predict == pred_test_v2_fromModel$predict)
+    # sum(pred_test_v2_viaPojo$predict == pred_test_v2_fromModel$predict) #100000
+    # sum(pred_test_v2_viaPojo$predict != pred_test_v2_fromModel$predict) #0
+    # # See no differences:
+    # cbind(pred_test_v2_viaPojo$predict, pred_test_v2_fromModel$predict)[1:100,]
     }
 
 
