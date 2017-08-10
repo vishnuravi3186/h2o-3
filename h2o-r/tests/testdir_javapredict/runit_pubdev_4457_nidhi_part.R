@@ -11,11 +11,11 @@ test <-
     set.seed(12345)
 
     ### Read data in H2O ####
-    train.hex <- h2o.importFile(path = paste0(getwd(), "/df_train.csv"),
-    destination_frame = "train.hex")
+ #   train.hex <- h2o.importFile(path = paste0(getwd(), "/df_train.csv"),
+#    destination_frame = "train.hex")
+    train.hex <- h2o.importFile(path = paste0(getwd(), "/temp.csv"),
+        destination_frame = "train.hex") # play with temp.csv as short dataset
     test.hex <- h2o.importFile(path = paste0(getwd(), "/temp.csv"),
-    destination_frame = "test.hex")
-    test_v2.hex <- h2o.importFile(path = paste0(getwd(), "/df_test_v2.csv"),
     destination_frame = "test.hex")
 
     browser()
@@ -33,7 +33,7 @@ test <-
     write.csv(pred_train_fromModel, "./h2oPredict_train.csv", quote=FALSE, row.names=FALSE)
     head(pred_train_fromModel)
 
-    system("javac -cp h2o-genmodel.jar -J-Xmx32g PredictCsv.java pojo_mismatch_3_model_0.java")
+ #   system("javac -cp h2o-genmodel.jar -J-Xmx32g PredictCsv.java pojo_mismatch_3_model_0.java")
     system("java -ea -cp :h2o-genmodel.jar hex.genmodel.tools.PredictCsv --header --model pojo_mismatch_3_model_0 --input ./df_test.csv --output ./pred_test_viaPojo.csv --decimal")
     system("java -ea -cp :h2o-genmodel.jar hex.genmodel.tools.PredictCsv --header --model pojo_mismatch_3_model_0 --input ./df_train.csv --output ./pred_train_viaPojo.csv --decimal")
     
