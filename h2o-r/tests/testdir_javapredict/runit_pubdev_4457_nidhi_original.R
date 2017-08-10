@@ -32,7 +32,6 @@ test <-
     matrix(runif(n*100), n, 100),
     matrix(rnorm(n*100), n, 100))
 
-
     write.csv(df_train, "./df_train.csv", row.names = F)
     write.csv(df_test, "./df_test.csv", row.names = F)
     write.csv(df_test_v2, "./df_test_v2.csv", row.names = F)
@@ -103,39 +102,15 @@ test <-
     pred_test_viaPojo <- read.csv("pred_test_viaPojo.csv")
     pred_train_viaPojo <- read.csv("pred_train_viaPojo.csv")
 
-    
-    all(pred_train_viaPojo$predict == pred_train_fromModel$predict)
-    sum(pred_train_viaPojo$predict == pred_train_fromModel$predict) #0
-    sum(pred_train_viaPojo$predict != pred_train_fromModel$predict) #100000
-    # See differences:
-    cbind(pred_train_viaPojo$predict, pred_train_fromModel$predict)[1:100,]
-    summary(pred_train_viaPojo$predict - pred_train_fromModel$predict)
-    
-    
-    all(pred_test_viaPojo$predict == pred_test_fromModel$predict)
-    sum(pred_test_viaPojo$predict == pred_test_fromModel$predict) #0
-    sum(pred_test_viaPojo$predict != pred_test_fromModel$predict) #100000
-    # See differences:
-    cbind(pred_test_viaPojo$predict, pred_test_fromModel$predict)[1:100,]
-    summary(pred_test_viaPojo$predict - pred_test_fromModel$predict)
-    #      Min.    1st Qu.     Median       Mean    3rd Qu.       Max.
-    #-9.987e-02 -1.330e-02 -9.234e-05 -7.335e-05  1.307e-02  1.159e-01
+    compareFrames(pred_train_viaPojo, pred_train_fromModel, 1e-6)
+    compareFrames(pred_test_viaPojo, pred_test_fromModel, 1e-6)
+  }
 
-    #### Version 2 does not have any differences ####
-    # pred_test_v2_fromModel <- h2o.predict(model_pojo_experiment, test_v2.hex)
-    # pred_test_v2_fromModel <- as.data.frame(pred_test_v2_fromModel)
-    # 
-    # system("java -ea -cp :h2o-genmodel.jar hex.genmodel.tools.PredictCsv --header --model pojo_mismatch_3_model_0 --input ./df_test_v2.csv --output ./pred_test_v2_viaPojo.csv --decimal")
-    # 
-    # pred_test_v2_viaPojo <- read.csv("pred_test_v2_viaPojo.csv")
-    # head(pred_test_v2_viaPojo)
-    # 
-    # all(pred_test_v2_viaPojo$predict == pred_test_v2_fromModel$predict)
-    # sum(pred_test_v2_viaPojo$predict == pred_test_v2_fromModel$predict) #100000
-    # sum(pred_test_v2_viaPojo$predict != pred_test_v2_fromModel$predict) #0
-    # # See no differences:
-    # cbind(pred_test_v2_viaPojo$predict, pred_test_v2_fromModel$predict)[1:100,]
-    }
-
+compareFrames<-function(f1, f2, tol) {
+  sameNum = sum(abs(f1$predict-f2$predict) <tol)
+  diffNum = length(f1)-sameNum
+  print(paste("Number of elements that differ more than tolerance is ", diffNum, sep=' '))
+  summary(f1$predict-f2$predict)
+}
 
 doTest("pubdev-4457: PredictCsv test", test)
