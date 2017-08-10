@@ -93,19 +93,35 @@ test <-
     #### Compare predictions for test data ####
     # Prediction from the model
     model_pojo_experiment = h2o.loadModel("/Users/wendycwong/h2o-3/h2o-r/tests/testdir_javapredict/pojo_mismatch_3_model_0")
-    pred_test_fromModel <- h2o.predict(model_pojo_experiment, test.hex)
+    pred_test_fromModel <- h2o.predict(model_pojo_experiment, test.hex) # use test data
     pred_test_fromModel <- as.data.frame(pred_test_fromModel)
     write.csv(pred_test_fromModel, "./h2oPredict.csv", quote=FALSE, row.names=FALSE)
     head(pred_test_fromModel)
+    
+    pred_train_fromModel <- h2o.predict(model_pojo_experiment, train.hex) # predict use train data
+    pred_train_fromModel <- as.data.frame(pred_train_fromModel)
+    write.csv(pred_train_fromModel, "./h2oPredict_train.csv", quote=FALSE, row.names=FALSE)
+    head(pred_train_fromModel)
 
 
     
     # h2o.saveModel(model_pojo_experiment, getwd(), force=TRUE)
     # h2o.download_pojo(model_pojo_experiment, get_jar = T, path = getwd())
-    system("javac -cp h2o-genmodel.jar -J-Xmx32g PredictCsv.java pojo_mismatch_3_model_0.java")
+  #  system("javac -cp h2o-genmodel.jar -J-Xmx32g PredictCsv.java pojo_mismatch_3_model_0.java")
     system("java -ea -cp :h2o-genmodel.jar hex.genmodel.tools.PredictCsv --header --model pojo_mismatch_3_model_0 --input ./df_test.csv --output ./pred_test_viaPojo.csv --decimal")
-
+    system("java -ea -cp :h2o-genmodel.jar hex.genmodel.tools.PredictCsv --header --model pojo_mismatch_3_model_0 --input ./df_train.csv --output ./pred_train_viaPojo.csv --decimal")
+    
     pred_test_viaPojo <- read.csv("pred_test_viaPojo.csv")
+    pred_train_viaPojo <- read.csv("pred_train_viaPojo.csv")
+    
+    all(pred_train_viaPojo$predict == pred_train_fromModel$predict)
+    sum(pred_train_viaPojo$predict == pred_train_fromModel$predict) #0
+    sum(pred_train_viaPojo$predict != pred_train_fromModel$predict) #100000
+    # See differences:
+    cbind(pred_train_viaPojo$predict, pred_train_fromModel$predict)[1:100,]
+    summary(pred_train_viaPojo$predict - pred_train_fromModel$predict)
+    
+    
 
     all(pred_test_viaPojo$predict == pred_test_fromModel$predict)
     sum(pred_test_viaPojo$predict == pred_test_fromModel$predict) #0
