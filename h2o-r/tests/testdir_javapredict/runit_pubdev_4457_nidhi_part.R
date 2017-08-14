@@ -11,14 +11,7 @@ test <-
     set.seed(12345)
 
     ### Read data in H2O ####
- #   train.hex <- h2o.importFile(path = paste0(getwd(), "/df_train.csv"),
-#    destination_frame = "train.hex")
-    # train.hex <- h2o.importFile(path = paste0(getwd(), "/temp.csv"),
-    #     destination_frame = "train.hex") # play with temp.csv as short dataset
-     # test.hex <- h2o.importFile(path = paste0(getwd(), "/df_test.csv"),
-     # destination_frame = "test.hex")
-    test.hex <- h2o.importFile(path = paste0(getwd(), "/temp.csv"),
-                               destination_frame = "test.hex")
+    test.hex <- h2o.importFile(locate("temp.csv"), destination_frame="test.hex")
 
     #### Compare predictions for test data ####
     # Prediction from the model trained from before
@@ -28,22 +21,11 @@ test <-
     write.csv(pred_test_fromModel, "./h2oPredict_test.csv", quote=FALSE, row.names=FALSE)
     head(pred_test_fromModel)
     
-    # pred_train_fromModel <- h2o.predict(model_pojo_experiment, train.hex) # predict use train data
-    # pred_train_fromModel <- as.data.frame(pred_train_fromModel)
-    # write.csv(pred_train_fromModel, "./h2oPredict_train.csv", quote=FALSE, row.names=FALSE)
-    # head(pred_train_fromModel)
-
- #   system("javac -cp h2o-genmodel.jar -J-Xmx32g PredictCsv.java pojo_mismatch_3_model_0.java")
-#    system("java -ea -cp :h2o-genmodel.jar hex.genmodel.tools.PredictCsv --header --model pojo_mismatch_3_model_0 --input ./df_test.csv --output ./pred_test_viaPojo.csv --decimal")
+    system("javac -cp h2o-genmodel.jar -J-Xmx32g PredictCsv.java pojo_mismatch_3_model_0.java")
     system("java -ea -cp :h2o-genmodel.jar hex.genmodel.tools.PredictCsv --header --model pojo_mismatch_3_model_0 --input ./temp.csv --output ./pred_test_viaPojo.csv --decimal")
     
-       # system("java -ea -cp :h2o-genmodel.jar hex.genmodel.tools.PredictCsv --header --model pojo_mismatch_3_model_0 --input ./df_train.csv --output ./pred_train_viaPojo.csv --decimal")
-    
+   
     pred_test_viaPojo <- read.csv("pred_test_viaPojo.csv")
- #   pred_train_viaPojo <- read.csv("pred_train_viaPojo.csv")
-#    print("Testing with training dataset\n")
- #   compareFrames(pred_train_viaPojo, pred_train_fromModel, 1e-6)
-    print("Testing with test dataset\n")
     compareFrames(pred_test_viaPojo, pred_test_fromModel, 1e-6)
   }
 
@@ -57,6 +39,7 @@ compareFrames <- function(f1, f2, tol) {
     sep = ' '
   ))
   summary(f1$predict - f2$predict)
+  expect_true(sameNum==1)
 }
 
 doTest("pubdev-4457: PredictCsv test", test)
