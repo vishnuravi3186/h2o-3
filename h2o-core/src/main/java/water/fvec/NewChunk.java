@@ -495,7 +495,7 @@ public class NewChunk extends Chunk {
       addNA();
     } else if(_ds != null) {
       assert _ms == null;
-      addNum(val*PrettyPrint.pow10(exp));
+      addNum(PrettyPrint.pow(val,exp));
     } else {
       if( val == 0 ) exp = 0;// Canonicalize zero
       if(val != 0 || !isSparseZero()) {
@@ -872,8 +872,7 @@ public class NewChunk extends Chunk {
     assert _ds == null;
     double [] ds = MemoryManager.malloc8d(_sparseLen);
     for(int i = 0; i < _sparseLen; ++i)
-      if(isNA2(i) || isCategorical2(i)) ds[i] = Double.NaN;
-      else  ds[i] = _ms.get(i)*PrettyPrint.pow10(_xs.get(i));
+      ds[i] = getDouble(i);
     _ms = null;
     _xs = null;
     _missing = null;
@@ -1153,17 +1152,15 @@ public class NewChunk extends Chunk {
       long t;                   // Remove extra scaling
       while( l!=0 && (t=l/10)*10==l ) { l=t; x++; }
       // Compute per-chunk min/max
-      double d = l*PrettyPrint.pow10(x);
+      double d = PrettyPrint.pow(l,x);
       if( d < min ) { min = d; llo=l; xlo=x; }
       if( d > max ) { max = d; lhi=l; xhi=x; }
       floatOverflow = l < Integer.MIN_VALUE+1 || l > Integer.MAX_VALUE;
-      xmin = Math.min(xmin,x);
+      if(l != 0)xmin = Math.min(xmin,x);
     }
     if(sparse){ // sparse?  then compare vs implied 0s
       if( min > 0 ) { min = 0; llo=0; xlo=0; }
       if( max < 0 ) { max = 0; lhi=0; xhi=0; }
-       xmin = Math.min(xmin,0);
-
     }
     // Constant column?
     if( _naCnt==0 && (min==max)) {
@@ -1174,7 +1171,7 @@ public class NewChunk extends Chunk {
       else
         return new C0DChunk(min, _len);
     }
-
+    if(min == max && min == 0) xmin = 0;
     // Compute min & max, as scaled integers in the xmin scale.
     // Check for overflow along the way
     boolean overflow = ((xhi-xmin) >= p10iLength) || ((xlo-xmin) >= p10iLength);
@@ -1186,7 +1183,7 @@ public class NewChunk extends Chunk {
       // Note that the power-10 is always positive, so the test devolves this:
       if( (lemax/pow10) != lhi ) overflow = true;
       // Note that xlo might be > xmin; e.g. { 101e-49 , 1e-48}.
-      long pow10lo = PrettyPrint.pow10i(xlo-xmin);
+      long pow10lo = llo == 0?1:PrettyPrint.pow10i(xlo-xmin);
       lemin = llo*pow10lo;
       if( (lemin/pow10lo) != llo ) overflow = true;
     }
@@ -1238,16 +1235,24 @@ public class NewChunk extends Chunk {
       return chunkD();
     if( fpoint ) {
       if( (int)lemin == lemin && (int)lemax == lemax ) {
-        if(leRange < 255) // Fits in scaled biased byte?
-          return new C1SChunk( bufX(lemin,xmin,C1SChunk._OFF,0),lemin,PrettyPrint.pow10(xmin));
+        if(leRange < 255) { // Fits in scaled biased byte?
+          return new C1SChunk(bufX(lemin, xmin, CSChunk._OFF, 0), lemin, xmin);
+        }
         if(leRange < 65535) { // we use signed 2B short, add -32k to the bias!
           long bias = 32767 + lemin;
-          return new C2SChunk( bufX(bias,xmin,C2SChunk._OFF,1),bias,PrettyPrint.pow10(xmin));
+          byte [] mem = bufX(bias,xmin,CSChunk._OFF,1);
+          C2SChunk c2s =  new C2SChunk(mem,bias,xmin);
+          for(int i = 0; i < _len; ++i)
+            if(getDouble(i) != c2s.atd(i)) {
+              c2s.setDecimal();
+              break;
+            }
+          return c2s;
         }
       }
       if(leRange < 4294967295l) {
         long bias = 2147483647l + lemin;
-        return new C4SChunk( bufX(bias,xmin,C4SChunk._OFF,2),bias,PrettyPrint.pow10(xmin));
+        return new C4SChunk(bufX(bias,xmin,C4SChunk._OFF,2),bias,xmin);
       }
       return chunkD();
     } // else an integer column
@@ -1259,7 +1264,7 @@ public class NewChunk extends Chunk {
     if( leRange < 255 ) {    // Span fits in a byte?
       if(0 <= min && max < 255 ) // Span fits in an unbiased byte?
         return new C1Chunk( bufX(0,0,C1Chunk._OFF,0));
-      return new C1SChunk( bufX(lemin,xmin,C1SChunk._OFF,0),lemin,PrettyPrint.pow10i(xmin));
+      return new C1SChunk( bufX(lemin,xmin,C1SChunk._OFF,0),lemin,xmin);
     }
 
     // Compress column into a short
@@ -1267,7 +1272,7 @@ public class NewChunk extends Chunk {
       if( xmin == 0 && Short.MIN_VALUE < lemin && lemax <= Short.MAX_VALUE ) // Span fits in an unbiased short?
         return new C2Chunk( bufX(0,0,C2Chunk._OFF,1));
       long bias = (lemin-(Short.MIN_VALUE+1));
-      return new C2SChunk( bufX(bias,xmin,C2SChunk._OFF,1),bias,PrettyPrint.pow10i(xmin));
+      return new C2SChunk( bufX(bias,xmin,C2SChunk._OFF,1),bias,xmin);
     }
     // Compress column into ints
     if( Integer.MIN_VALUE < min && max <= Integer.MAX_VALUE )
@@ -1350,6 +1355,12 @@ public class NewChunk extends Chunk {
     return bs;
   }
 
+  private double getDouble(int j){
+    if(_ds != null) return _ds[j];
+    if(isNA2(j)|| isCategorical(j)) return Double.NaN;
+    return PrettyPrint.pow(_ms.get(j),_xs.get(j));
+  }
+
   // Compute a compressed double buffer
   private Chunk chunkD() {
     HashMap<Long,Byte> hs = new HashMap<>(CUDChunk.MAX_UNIQUES);
@@ -1360,7 +1371,7 @@ public class NewChunk extends Chunk {
     for(int i = 0; i < _len; ++i){
       double d = 0;
       if(_id == null || _id.length == 0 || (j < _id.length && _id[j] == i)) {
-        d = _ds != null?_ds[j]:(isNA2(j)|| isCategorical(j))?Double.NaN:_ms.get(j)*PrettyPrint.pow10(_xs.get(j));
+        d = getDouble(j);
         ++j;
       }
       if (fitsInUnique) {
