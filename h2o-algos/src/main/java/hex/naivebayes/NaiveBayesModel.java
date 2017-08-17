@@ -191,4 +191,9 @@ public class NaiveBayesModel extends Model<NaiveBayesModel,NaiveBayesModel.Naive
 
     bodySb.i().p("preds[0] = hex.genmodel.GenModel.getPrediction(preds, PRIOR_CLASS_DISTRIB, data, " + defaultThreshold()+");").nl();
   }
+
+  @Override
+  public boolean havePojo() {
+    return true;
+  }
 }

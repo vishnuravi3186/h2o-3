@@ -36,6 +36,11 @@ import static water.H2O.technote;
  */
 public class DeepWaterModel extends Model<DeepWaterModel,DeepWaterParameters,DeepWaterModelOutput> implements Model.DeepFeatures {
 
+  @Override
+  public boolean haveMojo() {
+    return true;
+  }
+
   @Override public DeepwaterMojoWriter getMojo() { return new DeepwaterMojoWriter(this); }
 
   // Default publicly visible Schema is V2

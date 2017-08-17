@@ -125,6 +125,11 @@ public class DeepLearningModel extends Model<DeepLearningModel,DeepLearningModel
     }
   }
 
+  @Override
+  public boolean havePojo() {
+    return true;
+  }
+
   /**
    * Helper to allocate keys for output frames for weights and biases
    * @param destKey Base destination key for output frames

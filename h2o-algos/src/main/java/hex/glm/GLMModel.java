@@ -1259,6 +1259,16 @@ public class GLMModel extends Model<GLMModel,GLMModel.GLMParameters,GLMModel.GLM
   }
 
   @Override
+  public boolean havePojo() {
+    return true;
+  }
+
+  @Override
+  public boolean haveMojo() {
+    return true;
+  }
+
+  @Override
   public GLMMojoWriter getMojo() {
     return new GLMMojoWriter(this);
   }

@@ -75,6 +75,11 @@ public class DRFModel extends SharedTreeModel<DRFModel, DRFModel.DRFParameters, 
   }
 
   @Override
+  public boolean haveMojo() {
+    return true;
+  }
+
+  @Override
   public DrfMojoWriter getMojo() {
     return new DrfMojoWriter(this);
   }

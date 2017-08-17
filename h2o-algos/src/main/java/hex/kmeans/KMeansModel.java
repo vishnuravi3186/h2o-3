@@ -209,6 +209,16 @@ public class KMeansModel extends ClusteringModel<KMeansModel,KMeansModel.KMeansP
   }
 
   @Override
+  public boolean havePojo() {
+    return true;
+  }
+
+  @Override
+  public boolean haveMojo() {
+    return true;
+  }
+
+  @Override
   public KMeansMojoWriter getMojo() {
     return new KMeansMojoWriter(this);
   }

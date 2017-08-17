@@ -91,6 +91,10 @@ public class GBMModel extends SharedTreeModel<GBMModel, GBMModel.GBMParameters, 
     body.ip("preds[0] = hex.genmodel.GenModel.getPrediction(preds, PRIOR_CLASS_DISTRIB, data, " + defaultThreshold() + ");").nl();
   }
 
+  @Override
+  public boolean haveMojo() {
+    return true;
+  }
 
   @Override
   public GbmMojoWriter getMojo() {

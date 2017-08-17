@@ -488,4 +488,8 @@ public abstract class SharedTreeModel<
     return (T) sb.p(mname).p("_Forest_").p(t);
   }
 
+  @Override
+  public boolean havePojo() {
+    return true;
+  }
 }

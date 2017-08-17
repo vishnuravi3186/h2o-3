@@ -220,4 +220,9 @@ public class PCAModel extends Model<PCAModel,PCAModel.PCAParameters,PCAModel.PCA
 
     bodySb.i().p("}").nl();
   }
+
+  @Override
+  public boolean havePojo() {
+    return true;
+  }
 }

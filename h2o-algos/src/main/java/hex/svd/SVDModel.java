@@ -191,6 +191,11 @@ public class SVDModel extends Model<SVDModel, SVDModel.SVDParameters, SVDModel.S
     return preds;
   }
 
+  @Override
+  public boolean havePojo() {
+    return true;
+  }
+
   @Override protected SBPrintStream toJavaInit(SBPrintStream sb, CodeGeneratorPipeline fileCtx) {
     sb = super.toJavaInit(sb, fileCtx);
     sb.ip("public boolean isSupervised() { return " + isSupervised() + "; }").nl();

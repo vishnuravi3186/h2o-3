@@ -283,6 +283,10 @@ public class XGBoostModel extends Model<XGBoostModel, XGBoostModel.XGBoostParame
     return score0(data, preds, 0.0);
   }
 
+  @Override
+  public boolean haveMojo() {
+    return true;
+  }
 
   @Override
   public XGBoostMojoWriter getMojo() {
