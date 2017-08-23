@@ -47,7 +47,6 @@ public abstract class CSChunk extends Chunk {
   protected final double getD(int x, int NA){return getD(x,NA,Double.NaN);}
 
   protected final double getD(int x, int NA, double naImpute){
-    if(x == NA) return naImpute;
     return x == NA?naImpute:_isDecimal?(_bias + x)/_scale:(_bias + x)*_scale;
   }
 
