@@ -27,13 +27,13 @@ public abstract class CSChunk extends Chunk {
     _bias = bias;
     UnsafeUtils.set8(_mem, 0, bias);
     UnsafeUtils.set4(_mem, 8, scale);
-    _scale = PrettyPrint.pow(1,scale);
+    _scale = PrettyPrint.pow10(1,scale);
     UnsafeUtils.set4(_mem,12,szLog);
   }
 
   protected void setDecimal(){
     _isDecimal = true;
-    _scale = PrettyPrint.pow(1,-UnsafeUtils.get4(_mem,8));
+    _scale = PrettyPrint.pow10(1,-UnsafeUtils.get4(_mem,8));
     UnsafeUtils.set4(_mem,12,-UnsafeUtils.get4(_mem,12)-1);
   }
   private int getSzLog(){
@@ -61,7 +61,7 @@ public abstract class CSChunk extends Chunk {
     int x = UnsafeUtils.get4(_mem,8);
     int szLog = UnsafeUtils.get4(_mem,12);
     _isDecimal = szLog < 0;
-    _scale = PrettyPrint.pow(1,_isDecimal?-x:x);
+    _scale = PrettyPrint.pow10(1,_isDecimal?-x:x);
   }
 
   @Override protected final long at8_impl( int i ) {

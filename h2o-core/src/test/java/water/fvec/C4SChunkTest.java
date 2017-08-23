@@ -3,6 +3,8 @@ package water.fvec;
 import org.junit.*;
 
 import water.TestUtil;
+import water.util.PrettyPrint;
+
 import java.util.Arrays;
 
 public class C4SChunkTest extends TestUtil {
@@ -28,8 +30,8 @@ public class C4SChunkTest extends TestUtil {
         Assert.assertTrue(cc.isNA_abs(0));
       }
       for (int i = 0; i < man.length; ++i) {
-        Assert.assertEquals(man[i] * Math.pow(10, exp[i]),cc.atd(l + i),0);
-        Assert.assertEquals( man[i] * Math.pow(10, exp[i]),cc.atd(l + i),0);
+        Assert.assertEquals( PrettyPrint.pow10(man[i], exp[i]),cc.atd(l + i),0);
+        Assert.assertEquals( PrettyPrint.pow10(man[i], exp[i]),cc.atd(l + i),0);
       }
       Assert.assertTrue(cc.isNA(man.length + l));
       Assert.assertTrue(cc.isNA_abs(man.length + l));

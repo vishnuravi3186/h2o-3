@@ -1,6 +1,5 @@
 package water.fvec;
 
-import com.google.common.base.Charsets;
 import water.AutoBuffer;
 import water.Futures;
 import water.H2O;
@@ -495,7 +494,7 @@ public class NewChunk extends Chunk {
       addNA();
     } else if(_ds != null) {
       assert _ms == null;
-      addNum(PrettyPrint.pow(val,exp));
+      addNum(PrettyPrint.pow10(val,exp));
     } else {
       if( val == 0 ) exp = 0;// Canonicalize zero
       if(val != 0 || !isSparseZero()) {
@@ -1142,7 +1141,7 @@ public class NewChunk extends Chunk {
     int p10iLength = PrettyPrint.powers10i.length;
     long llo=Long   .MAX_VALUE, lhi=Long   .MIN_VALUE;
     int  xlo=Integer.MAX_VALUE, xhi=Integer.MIN_VALUE;
-
+    boolean hasZero = sparse;
     for(int i = 0; i< _sparseLen; i++ ) {
       if( isNA2(i) ) continue;
       long l = _ms.get(i);
@@ -1152,15 +1151,25 @@ public class NewChunk extends Chunk {
       long t;                   // Remove extra scaling
       while( l!=0 && (t=l/10)*10==l ) { l=t; x++; }
       // Compute per-chunk min/max
-      double d = PrettyPrint.pow(l,x);
+      double d = PrettyPrint.pow10(l,x);
+      if(d == 0) {
+        hasZero = true;
+        continue;
+      }
       if( d < min ) { min = d; llo=l; xlo=x; }
       if( d > max ) { max = d; lhi=l; xhi=x; }
       floatOverflow = l < Integer.MIN_VALUE+1 || l > Integer.MAX_VALUE;
-      if(l != 0)xmin = Math.min(xmin,x);
+      xmin = Math.min(xmin,x);
     }
-    if(sparse){ // sparse?  then compare vs implied 0s
-      if( min > 0 ) { min = 0; llo=0; xlo=0; }
-      if( max < 0 ) { max = 0; lhi=0; xhi=0; }
+    boolean hasNonZero = min != Double.POSITIVE_INFINITY && max != Double.NEGATIVE_INFINITY;
+    if(!hasNonZero) {  // only zeros and possibly nas, set all to zero
+      min = max = 0;
+      llo = lhi = 0;
+      xlo = xhi = xmin = 0;
+    }
+    if(hasZero){ // sparse?  then compare vs implied 0s
+      if( min > 0 ) { min = 0; llo=0; }
+      if( max < 0 ) { max = 0; lhi=0; }
     }
     // Constant column?
     if( _naCnt==0 && (min==max)) {
@@ -1358,7 +1367,7 @@ public class NewChunk extends Chunk {
   private double getDouble(int j){
     if(_ds != null) return _ds[j];
     if(isNA2(j)|| isCategorical(j)) return Double.NaN;
-    return PrettyPrint.pow(_ms.get(j),_xs.get(j));
+    return PrettyPrint.pow10(_ms.get(j),_xs.get(j));
   }
 
   // Compute a compressed double buffer

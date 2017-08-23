@@ -202,12 +202,10 @@ public class C1SChunkTest extends TestUtil {
     int[] exponents = new int[]{/*-32,*/-16, -8, -6, -4, -2, -1, 0, 1, 2, 4, 6, 8, 16/*,32*/};
     long[] biases = new long[]{-1234567, -12345, -1234,  1, 1234, 12345, 1234567};
     for(int x = 0; x < 3; ++x) {
-      double tsum_s = 0;
-      double tsum_d = 0;
-      long cnt_d = 0;
-      long cnt_s = 0;
+
       long tmin = Long.MAX_VALUE;
       double sum = 0;
+      long tsum = 0;
       for (int exponent : exponents) {
         for (long bias : biases) {
           if (exponent == 0 && 1 >= Math.abs(bias)) continue;
@@ -220,11 +218,13 @@ public class C1SChunkTest extends TestUtil {
           sum += count_sum((C1SChunk)c);
           long t1 = System.currentTimeMillis();
           long t = t1 - t0;
-          tsum_d += t;
           if (t < tmin) tmin = t;
+          tsum += t;
         }
       }
+      System.out.println("sum = " + sum + ", tsum = " + tsum + ", tmin = " + tmin);
     }
+
   }
 
 }

@@ -33,7 +33,7 @@ public abstract class ChunkVisitor {
   }
 
   void addValue(long m, int e) {
-    addValue(PrettyPrint.pow(m,e));
+    addValue(PrettyPrint.pow10(m,e));
   }
 
   void addZeros(int zeros) {

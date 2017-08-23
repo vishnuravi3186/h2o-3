@@ -123,7 +123,7 @@ public class PrettyPrint {
     1000000000000000000l,
   };
 
-  public static double pow(long m, int e){
+  public static double pow10(long m, int e){
     return e < 0?m/pow10(-e):m*pow10(e);
   }
   private static double pow10(int exp){ return ((exp >= -10 && exp <= 10)?powers10[exp+10]:Math.pow(10, exp)); }

@@ -4,6 +4,8 @@ import org.junit.*;
 
 import water.Futures;
 import water.TestUtil;
+import water.util.PrettyPrint;
+
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -30,8 +32,8 @@ public class C2SChunkTest extends TestUtil {
         Assert.assertTrue(cc.isNA_abs(0));
       }
       for (int i = 0; i < man.length; ++i) {
-        Assert.assertEquals((float) (man[i] * Math.pow(10, exp[i])), (float) cc.atd(l + i), 0);
-        Assert.assertEquals((float) (man[i] * Math.pow(10, exp[i])), (float) cc.at_abs(l + i), 0);
+        Assert.assertEquals(PrettyPrint.pow10(man[i],exp[i]), cc.atd(l + i), 0);
+        Assert.assertEquals(PrettyPrint.pow10(man[i],exp[i]), cc.at_abs(l + i), 0);
       }
       Assert.assertTrue(cc.isNA(man.length + l));
       Assert.assertTrue(cc.isNA_abs(man.length + l));
@@ -50,8 +52,8 @@ public class C2SChunkTest extends TestUtil {
         Assert.assertTrue(nc.isNA_abs(0));
       }
       for (int i = 0; i < man.length; ++i) {
-        Assert.assertEquals((float) (man[i] * Math.pow(10, exp[i])), (float) nc.atd(l + i), 0);
-        Assert.assertEquals((float) (man[i] * Math.pow(10, exp[i])), (float) nc.at_abs(l + i), 0);
+        Assert.assertEquals(PrettyPrint.pow10(man[i],exp[i]), nc.atd(l + i), 0);
+        Assert.assertEquals(PrettyPrint.pow10(man[i],exp[i]), nc.at_abs(l + i), 0);
       }
       Assert.assertTrue(nc.isNA(man.length + l));
       Assert.assertTrue(nc.isNA_abs(man.length + l));
@@ -63,8 +65,8 @@ public class C2SChunkTest extends TestUtil {
         Assert.assertTrue(cc2.isNA_abs(0));
       }
       for (int i = 0; i < man.length; ++i) {
-        Assert.assertEquals((float) (man[i] * Math.pow(10, exp[i])), (float) cc2.atd(l + i), 0);
-        Assert.assertEquals((float) (man[i] * Math.pow(10, exp[i])), (float) cc2.at_abs(l + i), 0);
+        Assert.assertEquals(PrettyPrint.pow10(man[i],exp[i]), cc2.atd(l + i), 0);
+        Assert.assertEquals(PrettyPrint.pow10(man[i],exp[i]), cc2.at_abs(l + i), 0);
       }
       Assert.assertTrue(cc2.isNA(man.length + l));
       Assert.assertTrue(cc2.isNA_abs(man.length + l));
@@ -91,8 +93,8 @@ public class C2SChunkTest extends TestUtil {
         Assert.assertTrue(cc.isNA_abs(0));
       }
       for (int i = 0; i < man.length; ++i) {
-        Assert.assertEquals((float) (man[i] * Math.pow(10, exp[i])), (float) cc.atd(l + i), 0);
-        Assert.assertEquals((float) (man[i] * Math.pow(10, exp[i])), (float) cc.at_abs(l + i), 0);
+        Assert.assertEquals(PrettyPrint.pow10(man[i],exp[i]), cc.atd(l + i), 0);
+        Assert.assertEquals(PrettyPrint.pow10(man[i],exp[i]), cc.at_abs(l + i), 0);
       }
       Assert.assertTrue(cc.isNA(man.length + l));
 
@@ -104,8 +106,8 @@ public class C2SChunkTest extends TestUtil {
         Assert.assertTrue(nc.isNA_abs(0));
       }
       for (int i = 0; i < man.length; ++i) {
-        Assert.assertEquals((float) (man[i] * Math.pow(10, exp[i])), (float) nc.atd(l + i), 0);
-        Assert.assertEquals((float) (man[i] * Math.pow(10, exp[i])), (float) nc.at_abs(l + i), 0);
+        Assert.assertEquals(PrettyPrint.pow10(man[i],exp[i]), nc.atd(l + i), 0);
+        Assert.assertEquals(PrettyPrint.pow10(man[i],exp[i]), nc.at_abs(l + i), 0);
       }
       Assert.assertTrue(nc.isNA(man.length + l));
       Assert.assertTrue(nc.isNA_abs(man.length + l));
@@ -117,8 +119,8 @@ public class C2SChunkTest extends TestUtil {
         Assert.assertTrue(cc2.isNA_abs(0));
       }
       for (int i = 0; i < man.length; ++i) {
-        Assert.assertEquals((float) (man[i] * Math.pow(10, exp[i])), (float) cc2.atd(l + i), 0);
-        Assert.assertEquals((float) (man[i] * Math.pow(10, exp[i])), (float) cc2.at_abs(l + i), 0);
+        Assert.assertEquals(PrettyPrint.pow10(man[i],exp[i]), cc2.atd(l + i), 0);
+        Assert.assertEquals(PrettyPrint.pow10(man[i],exp[i]), cc2.at_abs(l + i), 0);
       }
       Assert.assertTrue(cc2.isNA(man.length + l));
       Assert.assertTrue(cc2.isNA_abs(man.length + l));

@@ -1,7 +1,6 @@
 package water.fvec;
 
 import water.util.PrettyPrint;
-import water.util.UnsafeUtils;
 
 /**
  * The scale/bias function, where data is in SIGNED bytes before scaling.
@@ -10,7 +9,7 @@ public final class C1SChunk extends CSChunk {
   C1SChunk( byte[] bs, long bias, int scale) {
     super(bs,bias,scale,0);
     if(scale < 0) { // check precision
-      double div = PrettyPrint.pow(1, -scale);
+      double div = PrettyPrint.pow10(1, -scale);
       for (int i = 0; i < _len; ++i) {
         int x = 0xFF & _mem[_OFF + i];
         if (x == C1Chunk._NA) continue;

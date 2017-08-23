@@ -10,7 +10,7 @@ public class C4SChunk extends CSChunk {
   C4SChunk( byte[] bs, long bias, int scale ) {
     super(bs,bias,scale,2);
     if(scale < 0) { // check precision
-      double div = PrettyPrint.pow(1, -scale);
+      double div = PrettyPrint.pow10(1, -scale);
       for (int i = 0; i < _len; ++i) {
         int x = getMantissa(i);
         if (x == C4Chunk._NA) continue;

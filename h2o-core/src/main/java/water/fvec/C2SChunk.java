@@ -10,7 +10,7 @@ public class C2SChunk extends CSChunk {
   C2SChunk( byte[] bs, long bias, int scale ) {
     super(bs,bias,scale,1);
     if(scale < 0) { // check precision
-      double div = PrettyPrint.pow(1, -scale);
+      double div = PrettyPrint.pow10(1, -scale);
       for (int i = 0; i < _len; ++i) {
         int x = getMantissa(i);
         if (x == C2Chunk._NA) continue;
